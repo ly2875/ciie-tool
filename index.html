@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#173b35">
+<title>进博会选品记录与评分</title>
+<style>
+:root{--bg:#f3f6f4;--card:#fff;--ink:#1d2925;--muted:#687771;--line:#dce5e0;--green:#176b53;--green2:#e8f4ef;--orange:#a65b16;--red:#a83232;--shadow:0 2px 12px #173b3510}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+header{background:#173b35;color:white;padding:18px 16px 16px;position:sticky;top:0;z-index:5;box-shadow:0 2px 12px #0002}
+header h1{font-size:19px;margin:0 0 4px}header p{margin:0;color:#d4e5de;font-size:12px}
+nav{display:flex;gap:7px;overflow:auto;padding:10px;background:#e9efec;position:sticky;top:75px;z-index:4}
+nav button{white-space:nowrap;border:1px solid #cbd8d1;background:white;border-radius:20px;padding:8px 13px;color:#315148;font-size:13px}
+nav button.active{background:var(--green);color:white;border-color:var(--green)}
+main{max-width:850px;margin:auto;padding:12px}
+.page{display:none}.page.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px;margin:0 0 12px;box-shadow:var(--shadow)}
+h2{font-size:17px;margin:0 0 12px}h3{font-size:14px;margin:15px 0 8px;color:#315148}
+.note{font-size:12px;color:var(--muted);margin:4px 0 10px}
+label{display:block;font-size:13px;font-weight:600;margin:10px 0 5px;color:#33443d}
+input,select,textarea{width:100%;border:1px solid #cfdad4;border-radius:9px;background:#fff;padding:10px 11px;font:inherit;color:var(--ink);min-height:42px}
+textarea{min-height:76px;resize:vertical}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}.full{grid-column:1/-1}
+button{cursor:pointer;font:inherit}.btn{border:0;border-radius:9px;background:var(--green);color:white;padding:10px 14px;font-weight:600}
+.btn.secondary{background:#e8efeb;color:#285344;border:1px solid #cfddd5}
+.btn.danger{background:#fff0ef;color:var(--red);border:1px solid #efceca}
+.btn.small{padding:7px 10px;font-size:13px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.item{border:1px solid var(--line);border-radius:10px;padding:11px;margin:8px 0;background:#fff}
+.itemtop{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.itemtop strong{font-size:14px}
+.pill{font-size:11px;border-radius:20px;padding:3px 8px;background:#edf3ef;color:#426255;white-space:nowrap}
+.scoreline{display:grid;grid-template-columns:1fr 72px;gap:8px;align-items:center;margin:9px 0}
+.scoreline input{min-height:38px;padding:7px}
+.scoreline small{display:block;color:var(--muted);font-size:12px}
+.scorebar{height:9px;background:#e7eeea;border-radius:20px;overflow:hidden;margin:8px 0}
+.scorebar span{display:block;height:100%;background:#258264}
+.statgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.stat{background:#f4f8f6;border-radius:10px;padding:10px}.stat b{font-size:22px;display:block;color:#176b53}.stat small{color:var(--muted)}
+.callout{padding:10px 12px;background:#fff8e9;border:1px solid #f0dfb9;border-radius:9px;color:#76501c;font-size:12px}
+hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+.hidden{display:none!important}
+footer{text-align:center;color:#829089;font-size:11px;padding:18px}
+@media(max-width:520px){.grid{grid-template-columns:1fr}.full{grid-column:auto}header{position:relative}nav{top:0}.statgrid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header><h1>进博会选品记录与评分</h1><p>离线填写 · 单品独立建档 · 自动保存 · 汇总分析 · 数据导出</p></header>
+<nav>
+<button class="active" data-tab="records">商品档案</button>
+<button data-tab="meeting">洽谈记录</button>
+<button data-tab="score">评分评估</button>
+<button data-tab="summary">汇总分析</button>
+<button data-tab="backup">备份与说明</button>
+</nav>
+<main>
+<section id="records" class="page active">
+ <div class="card">
+  <div class="row" style="justify-content:space-between"><h2 style="margin:0">商品档案</h2><button class="btn small" id="newProduct">＋ 新建商品</button></div>
+  <p class="note">每个商品单独保存。先选择或新建商品，再填写下面各页内容。</p>
+  <label>当前商品</label><select id="currentProduct"></select>
+  <div class="row" style="margin-top:9px"><button class="btn secondary small" id="duplicateProduct">复制当前商品档案</button><button class="btn danger small" id="deleteProduct">删除当前商品</button></div>
+ </div>
+ <div class="card" id="basicCard">
+  <h2>一、基本信息</h2>
+  <div class="grid">
+   <div><label>商品品类 *</label><select data-field="category" id="category">
+    <option value="">请选择品类</option>
+    <option>个人护理 / 口腔护理 / 头皮护理</option><option>家庭清洁 / 洗涤 / 纸品 / 卫生护理</option><option>特色食品 / 咖啡 / 茶 / 燕麦轻食</option><option>宠物食品 / 宠物护理 / 宠物用品</option><option>睡眠用品 / 家纺 / 人体工学 / 舒适生活</option><option>母婴护理 / 婴幼儿日用品</option><option>适老化日常生活用品</option><option>眼部视觉健康消费品</option><option>家庭环境 / 空气净化 / 香氛</option><option>健康管理 / 非医疗健康消费品</option><option>其他</option>
+   </select></div>
+   <div><label>具体品名 *</label><input data-field="productName" placeholder="例如：分龄儿童牙刷"></div>
+   <div><label>品牌</label><input data-field="brand" placeholder="品牌名称"></div>
+   <div><label>展商 / 公司名称</label><input data-field="company"></div>
+   <div><label>国家 / 地区</label><input data-field="country"></div>
+   <div><label>展馆 / 展位号</label><input data-field="booth" placeholder="例如：6.1A ××"></div>
+   <div><label>联系人</label><input data-field="contact"></div>
+   <div><label>职务</label><input data-field="position"></div>
+   <div><label>电话 / 微信 / 邮箱</label><input data-field="contactInfo"></div>
+   <div><label>官网 / 产品链接</label><input data-field="website" placeholder="可粘贴网址"></div>
+   <div class="full"><label>商品核心卖点 / 与同类产品的区别</label><textarea data-field="sellingPoints" placeholder="材料、技术、功能、设计、产地、认证、独特使用场景等"></textarea></div>
+   <div class="full"><label>目标客户与使用场景</label><textarea data-field="targetUsers" placeholder="谁会买？解决什么具体问题？在什么场景下使用？"></textarea></div>
+   <div class="full"><label>现场观察 / 图片编号 / 备注</label><textarea data-field="notes"></textarea></div>
+  </div>
+ </div>
+</section>
+
+<section id="meeting" class="page">
+ <div class="card"><h2>二、代理与供货洽谈记录</h2><p class="note">每项均可填写；不清楚的写“待确认”，不要把口头承诺当作已核实事实。</p>
+ <div id="questions"></div>
+ </div>
+ <div class="card"><h2>三、产品合规与经营风险核查</h2><div id="compliance"></div></div>
+</section>
+
+<section id="score" class="page">
+ <div class="card"><h2>四、选品评分（满分100分）</h2><p class="note">每项按0至该项满分填写。评分应基于已拿到的资料和现场证据，不确定时先保守打分。</p>
+ <div id="scoreFields"></div>
+ <hr><div class="statgrid">
+  <div class="stat"><small>当前总分</small><b id="totalScore">0 / 100</b></div>
+  <div class="stat"><small>系统建议</small><b id="decision" style="font-size:17px">待评估</b></div>
+ </div>
+ <div class="scorebar"><span id="scoreFill" style="width:0%"></span></div>
+ <p id="scoreAdvice" class="note">填写各项评分后自动生成建议。</p>
+ </div>
+ <div class="card"><h2>五、利润测算（请填实际报价）</h2><p class="note">金额单位：人民币元。净贡献为简化估算，不等同于最终会计净利润。</p>
+ <div class="grid">
+  <div><label>计划零售价 / 成交价</label><input type="number" min="0" step="0.01" data-field="salePrice" placeholder="0"></div>
+  <div><label>供货成本（含税）</label><input type="number" min="0" step="0.01" data-field="costPrice" placeholder="0"></div>
+  <div><label>单件物流 / 包材</label><input type="number" min="0" step="0.01" data-field="shipping" placeholder="0"></div>
+  <div><label>平台 / 支付等费用</label><input type="number" min="0" step="0.01" data-field="platformFee" placeholder="0"></div>
+  <div><label>预计获客成本</label><input type="number" min="0" step="0.01" data-field="acquisition" placeholder="0"></div>
+  <div><label>售后 / 退货损耗预留</label><input type="number" min="0" step="0.01" data-field="afterSales" placeholder="0"></div>
+  <div><label>首批最低采购金额（MOQ）</label><input type="number" min="0" step="0.01" data-field="moqAmount" placeholder="0"></div>
+  <div><label>首批最低采购数量</label><input type="number" min="0" step="1" data-field="moqQty" placeholder="0"></div>
+ </div>
+ <div class="statgrid" style="margin-top:12px">
+  <div class="stat"><small>单件毛利（售价-供货成本）</small><b id="grossProfit">—</b></div>
+  <div class="stat"><small>单件预估贡献利润</small><b id="netProfit">—</b></div>
+ </div>
+ <p class="note" id="profitNote">未填写完整前不计算。</p>
+ </div>
+ <div class="card"><h2>六、最终判断</h2>
+ <label>当前结论</label><select data-field="finalDecision"><option value="">请选择</option><option>重点跟进 / 争取试销</option><option>补充资料后再判断</option><option>暂缓 / 不做</option><option>已进入试销</option></select>
+ <label>下一步行动</label><textarea data-field="nextStep" placeholder="例如：索取授权书、拿样、核算运费、确认平台准入"></textarea>
+ <label>跟进日期 / 截止时间</label><input data-field="followDate" type="date">
+ <label>其他风险 / 未解决问题</label><textarea data-field="openRisks"></textarea>
+ </div>
+</section>
+
+<section id="summary" class="page">
+ <div class="card"><h2>七、全部商品汇总</h2><p class="note">按当前已录入内容自动统计。点击商品可切换并继续编辑。</p>
+ <div class="statgrid">
+  <div class="stat"><small>商品总数</small><b id="sumCount">0</b></div>
+  <div class="stat"><small>平均评分</small><b id="sumAvg">—</b></div>
+  <div class="stat"><small>80分及以上</small><b id="sumHigh">0</b></div>
+  <div class="stat"><small>待补资料 / 未评分</small><b id="sumPending">0</b></div>
+ </div>
+ <div id="summaryList"></div>
+ </div>
+ <div class="card"><h2>汇总分析提示</h2><div id="analysisText" class="note">录入商品后自动生成初步观察。</div><p class="callout">系统评分只用于筛选优先级，不代替资质核验、合同审查和真实市场测试。授权、资质、中文标签、进口责任主体任一关键项不清楚，不能因为总分高就签约或付款。</p></div>
+</section>
+
+<section id="backup" class="page">
+ <div class="card"><h2>八、数据备份与恢复</h2>
+ <p>数据默认保存在当前手机、当前浏览器的本地存储中，不需要登录，也不需要联网。关闭页面后通常仍会保留。</p>
+ <div class="callout">重要：清理浏览器缓存/网站数据、换手机、换浏览器或浏览器隐私模式，可能导致数据丢失。请定期导出JSON备份，建议每次参观结束后备份；不要只依赖浏览器自动保存。</div>
+ <div class="row" style="margin-top:12px"><button class="btn" id="exportJson">导出完整备份 JSON</button><button class="btn secondary" id="exportCsv">导出评分汇总 CSV</button></div>
+ <label>导入之前导出的JSON备份</label><input type="file" id="importFile" accept=".json,application/json">
+ <p class="note">导入会把备份中的商品合并到当前记录；同ID记录将以备份内容覆盖当前记录。建议导入前先导出一份当前备份。</p>
+ <hr><h3>使用建议</h3>
+ <ul class="note">
+ <li>每个独立商品建一条记录；同一商品不同规格可另建档案。</li>
+ <li>现场不确定的项目写“待确认”，并记录由谁、何时答复。</li>
+ <li>拍照时把照片编号写入商品档案，照片本身需在手机相册单独保存。</li>
+ <li>每日结束导出JSON；回来后可把JSON或CSV文件上传给AI，进行横向对比和深度筛选。</li>
+ <li>HTML文件本身可保存在手机文件中，使用浏览器打开；若手机浏览器不支持本地文件持久存储，建议通过可信的静态网页托管方式打开，并仍定期导出备份。</li>
+ </ul>
+ </div>
+ <div class="card"><h2>九、评分规则</h2><p class="note">产品差异化20分、线上需求空间20分、代理价差/利润20分、复购/组合15分、MOQ资金10分、物流售后10分、合规授权5分。80分及以上重点洽谈；65–79分带回资料；低于65分暂缓。关键合规项未核实则一票暂缓。</p></div>
+</section>
+</main>
+<footer>进博会选品记录工具 · 数据仅保存在本机浏览器，定期备份</footer>
+<script>
+const KEY='ciie_product_records_v1';
+const categories=['个人护理 / 口腔护理 / 头皮护理','家庭清洁 / 洗涤 / 纸品 / 卫生护理','特色食品 / 咖啡 / 茶 / 燕麦轻食','宠物食品 / 宠物护理 / 宠物用品','睡眠用品 / 家纺 / 人体工学 / 舒适生活','母婴护理 / 婴幼儿日用品','适老化日常生活用品','眼部视觉健康消费品','家庭环境 / 空气净化 / 香氛','健康管理 / 非医疗健康消费品','其他'];
+const questionGroups=[
+['中国大陆渠道与授权',[
+['大陆是否已有总代理、总经销或独家代理？','现有总代理/经销商名称、联系方式、覆盖渠道；是否允许新增线上经销？'],
+['是否允许个人或小团队做中国大陆线上授权经销？','允许的平台（抖音、淘宝、拼多多、京东、微信等）；是否要求公司主体？'],
+['线上销售是否有渠道限制或最低售价要求？','是否限制平台、直播、跨境/一般贸易渠道；是否有控价/最低广告价政策？'],
+['能否提供正式授权书？授权范围、期限和区域是什么？','授权主体、授权商品/规格、授权平台、有效期、续约条件。'],
+['如果先试销，达到什么条件可以升级为区域/品类代理？','考核销量、周期、保证金、独家条件。']
+]],
+['供货价格与采购条件',[
+['是否支持一件代发、无库存分销或小批量试销？','发货地、库存同步方式、订单处理时效、是否支持中性包装。'],
+['首批最低采购金额和起订量（MOQ）是多少？','按SKU、规格、口味/颜色分别填写；是否可混批。'],
+['不同采购量对应的供货价是多少？','阶梯报价、含税/未税、报价有效期、是否含国内运输。'],
+['建议零售价、市场成交价和最低销售限制是多少？','线上主流售价、促销规则、最低广告价/最低成交价。'],
+['是否有样品？样品价格、运费和样品政策是什么？','样品能否抵扣首单货款；样品是否为正式销售版本。'],
+['付款方式、账期、保证金和结算周期是什么？','预付款比例、尾款条件、是否支持月结；所有费用列明。'],
+['供货是否稳定？常规库存、补货周期和缺货处理机制？','现货数量、生产周期、旺季交期、断货通知。']
+]],
+['物流、售后与质量',[
+['从哪里发货？单件运费和偏远地区附加费多少？','仓库位置、快递公司、首重续重、包邮门槛、体积重规则。'],
+['是否支持直接发给终端消费者？发货时效如何？','下单截止时间、发货承诺、物流单号回传方式。'],
+['破损、漏液、临期、错发、质量问题由谁承担？','举证要求、赔付标准、处理时限、退换货地址。'],
+['消费者退货/七天无理由退货如何处理？','退货地址、退货运费承担方、拆封商品处理规则。'],
+['产品保质期/有效期、批次追溯和库存周转如何管理？','发货时剩余保质期要求、批号/生产日期、召回流程。'],
+['是否提供产品图片、视频、说明书和中文详情页素材？','素材使用授权、是否可二次编辑、是否提供检测报告。']
+]],
+['资质、进口与平台准入',[
+['中国大陆销售的进口责任主体是谁？是否为正规进口？','进口商/境内责任人、一般贸易或跨境方式、报关/检验检疫资料。'],
+['商品在中国大陆属于什么监管类别？需要哪些注册/备案/许可？','产品分类依据、注册证/备案凭证/许可证编号及有效期；待自行核验。'],
+['是否有完整中文标签、说明书和合规宣传素材？','标签样稿、成分/材质、警示语、使用方法、生产日期/保质期。'],
+['能否提供营业执照、品牌授权链、发票和产品质量文件？','供货主体信息、授权链每一层、发票类型、检测/认证报告。'],
+['是否符合目标电商平台的类目和入驻要求？','平台类目、所需资质、品牌授权级别、特殊审核要求。'],
+['是否涉及食品、保健食品、化妆品、医疗器械、宠物食品等特殊监管？','具体监管属性和准入要求；不能只凭展商口头说明。']
+]],
+['市场与合作支持',[
+['目前中国市场主要客户是谁？核心购买场景是什么？','目标人群、使用频次、典型痛点、复购周期。'],
+['中国大陆已有线上销售数据或渠道反馈吗？','平台、销量区间、成交价、评价、退货率；如不便提供可记未知。'],
+['与同类竞品相比，最有说服力的差异是什么？','竞品名称、价格、核心差异、可验证证据。'],
+['品牌是否支持试销推广？是否有市场费用或培训支持？','试用装、推广物料、直播培训、联合营销、费用承担。'],
+['出现产品升级、价格调整或停止供货时如何通知？','通知周期、旧库存处理、价格保护、合作终止条款。']
+]]
+];
+const complianceItems=[
+['大陆线上销售授权已核实','授权书/合同、授权主体与授权链一致，明确平台和商品范围'],
+['进口及境内责任主体已核实','确认合法进口路径、境内责任主体及可追溯凭证'],
+['产品监管分类及资质已核实','按具体商品核对注册/备案/许可，不凭展商口头承诺'],
+['中文标签与说明书已核实','中文标签、成分/材质、警示语、生产日期/保质期等'],
+['平台类目及销售准入已核实','目标平台实际类目、品牌授权级别和准入材料'],
+['发票与供货主体一致性已核实','合同、收款主体、发票主体、发货主体关系清楚'],
+['售后、退货及质量责任已明确','书面约定破损、质量问题、召回和消费者退货责任'],
+['宣传合规风险已排查','无未经证实的疗效、疾病治疗、夸大/绝对化宣传']
+];
+const scoreDefs=[
+['差异化与竞争壁垒',20,'是否有真实技术/配方/材料/设计/产地差异；是否难以被低价替代'],
+['线上需求空间',20,'是否有明确需求、搜索/内容场景和可触达客户；竞品是否过度拥挤'],
+['代理价差与利润空间',20,'按真实成交价扣除供货、物流、平台、获客、售后后是否仍有利润'],
+['复购与组合销售潜力',15,'消耗速度、复购周期、关联SKU、套装/补充装机会'],
+['MOQ与资金压力',10,'是否可小批量/一件代发；首批资金、库存和账期压力是否可控'],
+['物流与售后难度',10,'体积重量、易碎/漏液、保质期、退货率预期和售后复杂度'],
+['合规与授权清晰度',5,'授权链、进口资质、产品分类、中文标签、平台准入是否清晰']
+];
+let records=[],currentId=null,saveTimer=null;
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const uid=()=> 'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function blank(){return {id:uid(),created:new Date().toISOString(),updated:new Date().toISOString(),category:'',productName:'',brand:'',company:'',country:'',booth:'',contact:'',position:'',contactInfo:'',website:'',sellingPoints:'',targetUsers:'',notes:'',answers:{},checks:{},scores:{},salePrice:'',costPrice:'',shipping:'',platformFee:'',acquisition:'',afterSales:'',moqAmount:'',moqQty:'',finalDecision:'',nextStep:'',followDate:'',openRisks:''}}
+function load(){try{let v=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(v))records=v}catch(e){records=[]}if(!records.length)records=[blank()];currentId=records[0].id;renderAll();save()}
+function save(){if(!current())return;current().updated=new Date().toISOString();try{localStorage.setItem(KEY,JSON.stringify(records));$('#saveStatus')?.remove()}catch(e){alert('本地存储失败，可能空间不足。请立即导出JSON备份。')}}
+function current(){return records.find(x=>x.id===currentId)}
+function scheduleSave(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{save();renderSummary()},250)}
+function renderSelect(){let s=$('#currentProduct');s.innerHTML='';records.forEach((r,i)=>{let o=document.createElement('option');o.value=r.id;o.textContent=`${i+1}. ${r.productName||'未命名商品'}${r.brand?' · '+r.brand:''}`;s.append(o)});s.value=currentId}
+function bindFields(){let r=current();if(!r)return;$$('[data-field]').forEach(el=>{let k=el.dataset.field;el.value=r[k]??'';el.oninput=el.onchange=()=>{r[k]=el.value;scheduleSave();if(['salePrice','costPrice','shipping','platformFee','acquisition','afterSales'].includes(k))calcProfit()}});$('#category').value=r.category||''}
+function renderQuestions(){let r=current();$('#questions').innerHTML=questionGroups.map((g,gi)=>`<h3>${g[0]}</h3>${g[1].map((q,qi)=>{let k=`q${gi}_${qi}`;return `<div class="item"><strong>${q[0]}</strong><p class="note">${q[1]}</p><textarea data-answer="${k}" placeholder="记录对方答复、数字、承诺、待确认事项…"></textarea></div>`}).join('')}`).join('');$$('[data-answer]').forEach(el=>{let k=el.dataset.answer;el.value=r.answers[k]||'';el.oninput=()=>{r.answers[k]=el.value;scheduleSave()}})}
+function renderCompliance(){let r=current();$('#compliance').innerHTML=complianceItems.map((it,i)=>`<div class="item"><label style="margin:0"><input type="checkbox" data-check="${i}" style="width:auto;min-height:0;margin-right:7px;vertical-align:middle"> ${it[0]}</label><p class="note">${it[1]}</p><textarea data-checknote="${i}" placeholder="证据/文件名称、编号、核验人、待补内容"></textarea></div>`).join('');$$('[data-check]').forEach(el=>{let i=el.dataset.check;el.checked=!!r.checks[i]?.ok;el.onchange=()=>{r.checks[i]=r.checks[i]||{};r.checks[i].ok=el.checked;scheduleSave();calcScore()}});$$('[data-checknote]').forEach(el=>{let i=el.dataset.checknote;el.value=r.checks[i]?.note||'';el.oninput=()=>{r.checks[i]=r.checks[i]||{};r.checks[i].note=el.value;scheduleSave()}})}
+function renderScores(){let r=current();$('#scoreFields').innerHTML=scoreDefs.map((d,i)=>`<div class="item"><div class="itemtop"><strong>${d[0]}</strong><span class="pill">满分 ${d[1]}</span></div><small class="note">${d[2]}</small><div class="scoreline"><input type="range" min="0" max="${d[1]}" step="1" value="${r.scores[i]??0}" data-range="${i}"><input type="number" min="0" max="${d[1]}" step="1" value="${r.scores[i]??0}" data-score="${i}"></div></div>`).join('');$$('[data-range]').forEach(el=>el.oninput=()=>setScore(el.dataset.range,el.value));$$('[data-score]').forEach(el=>el.onchange=()=>setScore(el.dataset.score,el.value));calcScore()}
+function setScore(i,v){let max=scoreDefs[i][1];v=Math.max(0,Math.min(max,Number(v)||0));current().scores[i]=v;$$(`[data-range="${i}"]`).forEach(x=>x.value=v);$$(`[data-score="${i}"]`).forEach(x=>x.value=v);scheduleSave();calcScore()}
+function calcScore(){let r=current();if(!r)return;let total=scoreDefs.reduce((s,d,i)=>s+(Number(r.scores[i])||0),0);$('#totalScore').textContent=`${total} / 100`;$('#scoreFill').style.width=total+'%';let unchecked=complianceItems.some((_,i)=>!r.checks[i]?.ok);let decision=unchecked?'合规未核实：暂缓签约':total>=80?'重点洽谈':total>=65?'带回资料': '暂缓';$('#decision').textContent=decision;$('#scoreAdvice').textContent=unchecked?'即使评分较高，只要关键合规项尚未核实，也不要签约或支付代理/保证金。':total>=80?'优先争取样品、书面报价和小批量试销条件。':total>=65?'补齐价格、资质、售后与市场数据后再复评。':'暂不投入较多时间或资金。';}
+function calcProfit(){let r=current();if(!r)return;let keys=['salePrice','costPrice','shipping','platformFee','acquisition','afterSales'];let vals=keys.map(k=>Number(r[k]));if(!vals.every(v=>Number.isFinite(v)&&v>=0)||!r.salePrice||!r.costPrice){$('#grossProfit').textContent='—';$('#netProfit').textContent='—';$('#profitNote').textContent='请至少填写售价和供货成本；其余费用按实际估算。';return}let gross=vals[0]-vals[1],net=gross-vals.slice(2).reduce((a,b)=>a+b,0);$('#grossProfit').textContent=gross.toFixed(2);$('#netProfit').textContent=net.toFixed(2);$('#profitNote').textContent=net<0?'预估贡献利润为负，当前价格/成本结构不成立。':net<100?'利润缓冲偏薄，获客或退货稍有波动就可能亏损。':net<300?'有一定空间，但还未达到你希望的300–500元单笔贡献利润。':'达到或超过300元目标区间，仍需用真实订单验证。'}
+function renderAll(){renderSelect();bindFields();renderQuestions();renderCompliance();renderScores();calcProfit();renderSummary()}
+function renderSummary(){let count=records.length,totals=records.map(r=>scoreDefs.reduce((s,d,i)=>s+(Number(r.scores[i])||0),0)),avg=totals.reduce((a,b)=>a+b,0)/(count||1),high=totals.filter(x=>x>=80).length,pending=records.filter((r,i)=>!r.productName||!Object.keys(r.scores).length||complianceItems.some((_,j)=>!r.checks[j]?.ok)).length;$('#sumCount').textContent=count;$('#sumAvg').textContent=count?avg.toFixed(1):'—';$('#sumHigh').textContent=high;$('#sumPending').textContent=pending;let sorted=records.map((r,i)=>({r,score:totals[i]})).sort((a,b)=>b.score-a.score);$('#summaryList').innerHTML=sorted.map(({r,score})=>`<div class="item"><div class="itemtop"><div><strong>${esc(r.productName||'未命名商品')}</strong><p class="note">${esc(r.brand||'未填品牌')} · ${esc(r.category||'未选品类')} · ${esc(r.booth||'展位待填')}</p></div><span class="pill">${score}分</span></div><button class="btn secondary small" data-open="${r.id}">打开档案</button></div>`).join('');$$('[data-open]').forEach(b=>b.onclick=()=>switchProduct(b.dataset.open));let cats={};records.forEach(r=>cats[r.category||'未分类']=(cats[r.category||'未分类']||0)+1);let top=Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(x=>`${esc(x[0])}：${x[1]}件`).join('；');$('#analysisText').innerHTML=`目前共记录 <b>${count}</b> 件商品，平均评分 <b>${avg.toFixed(1)}</b> 分，80分以上 <b>${high}</b> 件。品类分布：${top||'暂无'}。<br><br>建议先比较高分商品的真实到手成本、授权链和售后承诺。对同一品类的商品，优先比较供货价、线上实际成交价、物流和复购，不要只比较展商给出的建议零售价。`}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function switchProduct(id){save();currentId=id;renderAll();$('#currentProduct').value=id;document.querySelector('[data-tab="records"]').click();window.scrollTo(0,0)}
+$$('nav button').forEach(b=>b.onclick=()=>{$$('nav button').forEach(x=>x.classList.toggle('active',x===b));$$('.page').forEach(p=>p.classList.toggle('active',p.id===b.dataset.tab));if(b.dataset.tab==='summary')renderSummary()});
+$('#currentProduct').onchange=e=>{save();currentId=e.target.value;renderAll()};
+$('#newProduct').onclick=()=>{save();let r=blank();records.push(r);currentId=r.id;renderAll()};
+$('#duplicateProduct').onclick=()=>{let c=JSON.parse(JSON.stringify(current()));c.id=uid();c.productName=(c.productName||'商品')+'（副本）';c.created=new Date().toISOString();records.push(c);currentId=c.id;renderAll()};
+$('#deleteProduct').onclick=()=>{if(records.length===1){alert('至少保留一条商品记录。');return}if(confirm('确定删除当前商品及其所有洽谈、评分数据？此操作不可撤销。')){records=records.filter(r=>r.id!==currentId);currentId=records[0].id;renderAll();save()}};
+function download(name,content,type){let blob=new Blob([content],{type});let url=URL.createObjectURL(blob);let a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1500)}
+$('#exportJson').onclick=()=>{save();download('进博会选品备份_'+new Date().toISOString().slice(0,10)+'.json',JSON.stringify({app:'进博会选品记录与评分',version:1,exportedAt:new Date().toISOString(),records},null,2),'application/json;charset=utf-8')};
+$('#exportCsv').onclick=()=>{save();let cols=['品类','商品名称','品牌','展商','国家地区','展位','联系人','联系方式','差异化20','需求20','利润20','复购15','MOQ10','物流10','合规5','总分','售价','供货成本','物流包材','平台费用','获客成本','售后预留','预估贡献利润','首批采购金额','首批数量','最终判断','下一步','跟进日期'];let rows=[cols];records.forEach(r=>{let sc=scoreDefs.map((d,i)=>Number(r.scores[i])||0),net=Number(r.salePrice||0)-Number(r.costPrice||0)-['shipping','platformFee','acquisition','afterSales'].reduce((s,k)=>s+Number(r[k]||0),0);rows.push([r.category,r.productName,r.brand,r.company,r.country,r.booth,r.contact,r.contactInfo,...sc,sc.reduce((a,b)=>a+b,0),r.salePrice,r.costPrice,r.shipping,r.platformFee,r.acquisition,r.afterSales,net,r.moqAmount,r.moqQty,r.finalDecision,r.nextStep,r.followDate])});let csv='\ufeff'+rows.map(row=>row.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');download('进博会选品评分汇总_'+new Date().toISOString().slice(0,10)+'.csv',csv,'text/csv;charset=utf-8')};
+$('#importFile').onchange=async e=>{let f=e.target.files[0];if(!f)return;try{let data=JSON.parse(await f.text());let incoming=Array.isArray(data)?data:data.records;if(!Array.isArray(incoming))throw Error('文件格式不正确');if(!confirm(`将导入 ${incoming.length} 条记录。同ID商品会覆盖当前记录，是否继续？`))return;incoming.forEach(x=>{if(!x.id)x.id=uid();let i=records.findIndex(r=>r.id===x.id);if(i>=0)records[i]=x;else records.push(x)});currentId=records[0].id;save();renderAll();alert('导入完成。')}catch(err){alert('导入失败：'+err.message)}e.target.value=''};
+load();
+</script>
+</body></html>
